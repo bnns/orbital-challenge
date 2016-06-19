@@ -12,9 +12,9 @@ defmodule Solver do
   @end_name "END"
 
   defp neighbor_distance_from(node) do
-    fn (neighbor) ->
-      dist = calc_distance(node, neighbor)
-      set_unvisited(neighbor, dist)
+    fn neighbor ->
+      dist = calc_distance node, neighbor
+      set_unvisited neighbor, dist
     end
   end
 
@@ -22,9 +22,10 @@ defmodule Solver do
     # euclidean distance
     %{x: x1, y: y1, z: z1} = start
     %{x: x2, y: y2, z: z2} = finish
-
-    dist_squared = :math.pow(x1 - x2, 2) + :math.pow(y1 - y2, 2) + :math.pow(z1 - z2, 2)
-
+    dx = x1 - x2
+    dy = y1 - y2
+    dz = z1 - z2
+    dist_squared = :math.pow(dx, 2) + :math.pow(dy, 2) + :math.pow(dz, 2)
     :math.sqrt dist_squared
   end
 
@@ -58,10 +59,13 @@ defmodule Solver do
     end
   end
 
+  defp not_visited(node) do
+    !node[:visited]
+  end
+
   defp traverse_unvisited(name, q) do
-    # for each node,
-    # find distance of all neighbors
-    # assign nearest neighbor as the next current node
+    # for each node, find distance of all neighbors and assign nearest
+    # neighbor as the next current node
 
     get_values_from_name = get_node_values(q)
     node = get_values_from_name.(name)
@@ -69,7 +73,7 @@ defmodule Solver do
 
     new_neighbors = node[:neighbors]
     |> Enum.map(&(get_values_from_name.(&1)))
-    |> Enum.filter(fn n -> !n[:visited] end)
+    |> Enum.filter(&not_visited(&1))
     |> Enum.map(&(neighbor_distance.(&1)))
 
     new_q = update_q(node, q, new_neighbors)
@@ -177,20 +181,20 @@ defmodule Solver do
 
   defp toSatellite(row) do
     row
-    |> (fn row -> Enum.zip(@header, row) end).()
+    |> (&Enum.zip(@header, &1)).()
     |> Enum.into(%{})
   end
 
   defp findNeighbors(sat, list) do
     neighbors = list
     |> Enum.filter(&lineBetween(&1, sat))
-    |> Enum.map(fn vertex -> vertex[:name] end)
+    |> Enum.map(&to_name(&1))
 
     Map.put_new(sat, :neighbors, neighbors)
   end
 
   @doc """
-  Given x, y, z of two points and the radius of the Earth, find if any two satellites have line of sight
+  Given cartesian coordinates of two points and the radius of the Earth, find if there exists a clear line of sight
   http://paulbourke.net/geometry/circlesphere/index.html#linesphere
   """
   def lineBetween(initial, final) do
