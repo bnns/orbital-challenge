@@ -2,7 +2,7 @@ defmodule SolverTest do
   use ExUnit.Case
   doctest Solver
 
-  test "the truth" do
-    assert 1 + 1 == 2
+  test "solve" do
+    assert Solver.solve == ["START", "SAT3", "SAT17", "END"]
   end
 end
